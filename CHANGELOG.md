@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/gabbium/outcome-core-dotnet/compare/v1.1.0...v1.2.0) (2026-03-14)
+
+
+### Features
+
+* add void Outcome type ([f1253ba](https://github.com/gabbium/outcome-core-dotnet/commit/f1253ba0a1fef9114b9a68a30f74b07751054966))
+
 # [1.1.0](https://github.com/gabbium/outcome-core-dotnet/compare/v1.0.0...v1.1.0) (2026-03-14)
 
 
