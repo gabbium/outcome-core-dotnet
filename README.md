@@ -46,7 +46,7 @@ OutcomeCore provides two result types:
     Outcome<T>
     Outcome
 
-### Outcome`<T>`{=html}
+### Outcome`<T>`
 
 Represents an operation that returns a value.
 
