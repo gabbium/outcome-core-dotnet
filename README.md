@@ -5,22 +5,27 @@
 ![Sonar Quality Gate](https://img.shields.io/sonar/quality_gate/gabbium_outcome-core-dotnet?server=https%3A%2F%2Fsonarcloud.io)
 ![Sonar Coverage](https://img.shields.io/sonar/coverage/gabbium_outcome-core-dotnet?server=https%3A%2F%2Fsonarcloud.io)
 
-A lightweight **result pattern library for .NET** that represents operation outcomes without relying on exceptions for control flow.
+A lightweight **result pattern library for .NET** that represents
+operation outcomes without relying on exceptions for control flow.
 
 `OutcomeCore` provides a simple and explicit way to return either:
 
-- a **value**
-- or **one or more errors**
+-   a **value**
+-   **no value (successful operation)**
+-   or **one or more errors**
 
-This approach improves readability, encourages explicit error handling, and integrates naturally with modern .NET architectures such as **CQRS, handlers, and Minimal APIs**.
+This approach improves readability, encourages explicit error handling,
+and integrates naturally with modern .NET architectures such as **CQRS,
+handlers, and Minimal APIs**.
 
-Inspired by patterns used in libraries such as ErrorOr and Ardalis.Result.
+Inspired by patterns used in libraries such as **ErrorOr** and
+**Ardalis.Result**.
 
 ---
 
 # Installation
 
-```bash
+``` bash
 dotnet add package OutcomeCore
 ```
 
@@ -30,21 +35,41 @@ dotnet add package OutcomeCore
 
 An operation returns either:
 
-```
-Value
-or
-Errors
-```
+    Value
+    or
+    Errors
 
 Never both.
 
-```csharp
-Outcome<T>
+OutcomeCore provides two result types:
+
+    Outcome<T>
+    Outcome
+
+### Outcome`<T>`{=html}
+
+Represents an operation that returns a value.
+
+``` csharp
+Outcome<Book>
 ```
 
 If `IsError` is `true`, the operation failed.
 
-If `IsError` is `false`, the operation succeeded and `Value` is available.
+If `IsError` is `false`, the operation succeeded and `Value` is
+available.
+
+---
+
+### Outcome
+
+Represents an operation that **does not return a value**.
+
+Useful for commands where success simply means the operation completed.
+
+``` csharp
+Outcome
+```
 
 ---
 
@@ -52,7 +77,7 @@ If `IsError` is `false`, the operation succeeded and `Value` is available.
 
 Errors are strongly typed and categorized.
 
-```csharp
+``` csharp
 public record Error
 {
     public string Code { get; }
@@ -64,16 +89,14 @@ public record Error
 
 Supported error types:
 
-```
-Validation
-BusinessRule
-NotFound
-Conflict
-```
+    Validation
+    BusinessRule
+    NotFound
+    Conflict
 
 Example:
 
-```csharp
+``` csharp
 return Error.Validation(
     code: "email.invalid",
     description: "Email format is invalid"
@@ -88,7 +111,7 @@ return Error.Validation(
 
 ### Query Handler
 
-```csharp
+``` csharp
 public sealed class GetBookHandler
 {
     private readonly IBookRepository _repository;
@@ -119,9 +142,11 @@ public sealed class GetBookHandler
 
 ### Command Handler
 
-Commands often return `Unit` when no value is needed.
+Commands typically do not return values.
 
-```csharp
+Use `Outcome`.
+
+``` csharp
 public sealed class DeleteBookHandler
 {
     private readonly IBookRepository _repository;
@@ -131,7 +156,7 @@ public sealed class DeleteBookHandler
         _repository = repository;
     }
 
-    public Outcome<Unit> Handle(DeleteBookCommand command)
+    public Outcome Handle(DeleteBookCommand command)
     {
         var exists = _repository.Exists(command.Id);
 
@@ -145,7 +170,7 @@ public sealed class DeleteBookHandler
 
         _repository.Delete(command.Id);
 
-        return Unit.Value;
+        return Outcome.Success(); // success
     }
 }
 ```
@@ -154,7 +179,7 @@ public sealed class DeleteBookHandler
 
 # Returning Multiple Errors
 
-```csharp
+``` csharp
 return new[]
 {
     Error.Validation("title.required", "Title is required"),
@@ -166,13 +191,16 @@ return new[]
 
 # Validation Pipeline Integration
 
-`OutcomeCore` integrates naturally with validation pipelines commonly used in **CQRS architectures**.
+`OutcomeCore` integrates naturally with validation pipelines commonly
+used in **CQRS architectures**.
 
-When combined with validation libraries such as **FluentValidation**, validation errors can be converted into `Outcome` errors before the handler executes.
+When combined with validation libraries such as **FluentValidation**,
+validation errors can be converted into `Outcome` errors before the
+handler executes.
 
 Example validation behavior:
 
-```csharp
+``` csharp
 public class ValidationBehavior<TMessage, TResponse>(
     IEnumerable<IValidator<TMessage>> validators)
     : IPipelineBehavior<TMessage, TResponse>
@@ -213,17 +241,18 @@ public class ValidationBehavior<TMessage, TResponse>(
 }
 ```
 
-Validation errors will automatically propagate as `Outcome` failures.
+Validation errors automatically propagate as `Outcome` failures.
 
 ---
 
 # Mapping Outcome to HTTP Responses
 
-When using **ASP.NET Minimal APIs**, `Outcome` can be mapped to HTTP responses using a helper.
+When using **ASP.NET Minimal APIs**, `Outcome` can be mapped to HTTP
+responses using a helper.
 
 Example mapper:
 
-```csharp
+``` csharp
 public static class CustomResults
 {
     public static IResult Problem(IOutcome outcome)
@@ -259,7 +288,7 @@ public static class CustomResults
 
 Example endpoint:
 
-```csharp
+``` csharp
 private static async Task<IResult> HandleAsync(
     CreateBookRequest request,
     IMediator mediator,
@@ -271,37 +300,44 @@ private static async Task<IResult> HandleAsync(
         request.Description,
         request.PublishedYear);
 
-    var result = await mediator.Send(command, cancellationToken);
+    var outcome = await mediator.Send(command, cancellationToken);
 
-    if (result.IsError)
+    if (outcome.IsError)
     {
-        return CustomResults.Problem(result);
+        return CustomResults.Problem(outcome);
     }
 
-    return Results.Created($"/books/{result.Value.Id}", result.Value);
+    return Results.Created($"/books/{outcome.Value.Id}", outcome.Value);
 }
 ```
-
-This keeps endpoints simple and delegates HTTP mapping to a dedicated component.
 
 ---
 
 # Handling Results
 
-```csharp
-var result = handler.Handle(command);
+``` csharp
+var outcome = handler.Handle(command);
 
-if (result.IsError)
+if (outcome.IsError)
 {
-    foreach (var error in result.Errors)
+    foreach (var error in outcome.Errors)
     {
         Console.WriteLine($"{error.Code}: {error.Description}");
     }
 
     return;
 }
+```
 
-var value = result.Value;
+For value results:
+
+``` csharp
+var outcome = handler.Handle(query);
+
+if (!outcome.IsError)
+{
+    var value = outcome.Value;
+}
 ```
 
 ---
@@ -312,15 +348,15 @@ var value = result.Value;
 
 You can return values or errors directly:
 
-```csharp
+``` csharp
 return book;
 ```
 
-```csharp
+``` csharp
 return Error.NotFound();
 ```
 
-```csharp
+``` csharp
 return new[]
 {
     Error.Validation(),
@@ -328,40 +364,23 @@ return new[]
 };
 ```
 
-These automatically convert to `Outcome<T>`.
-
----
-
-# Unit Type
-
-When an operation succeeds but does not return a value, use `Unit`.
-
-```csharp
-public Outcome<Unit> Handle(CreateUserCommand command)
-{
-    repository.Add(new User(command.Name));
-
-    return Unit.Value;
-}
-```
+These automatically convert to `Outcome<T>` or `Outcome`.
 
 ---
 
 # Example Flow
 
-```
-Endpoint
-   ↓
-Mediator
-   ↓
-Handler
-   ↓
-Outcome<T>
-   ↓
-HTTP mapping
-   ↓
-HTTP Response
-```
+    Endpoint
+       ↓
+    Mediator
+       ↓
+    Handler
+       ↓
+    Outcome / Outcome<T>
+       ↓
+    HTTP mapping
+       ↓
+    HTTP Response
 
 ---
 

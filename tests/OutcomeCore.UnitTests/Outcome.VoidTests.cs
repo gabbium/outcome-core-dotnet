@@ -1,12 +1,12 @@
 namespace OutcomeCore.UnitTests;
 
-public class OutcomeTests
+public class OutcomeVoidTests
 {
     [Fact]
-    public void IsError_ShouldBeFalse_WhenOutcomeContainsValue()
+    public void IsError_ShouldBeFalse_WhenOutcomeIsSuccess()
     {
         // Arrange
-        Outcome<string> outcome = "value";
+        var outcome = Outcome.Success();
 
         // Act
         var result = outcome.IsError;
@@ -16,10 +16,11 @@ public class OutcomeTests
     }
 
     [Fact]
-    public void IsError_ShouldBeTrue_WhenOutcomeContainsError()
+    public void IsError_ShouldBeTrue_WhenOutcomeCreatedWithFailure()
     {
         // Arrange
-        Outcome<string> outcome = Error.Validation();
+        var error = Error.Validation();
+        var outcome = Outcome.Failure(error);
 
         // Act
         var result = outcome.IsError;
@@ -29,43 +30,45 @@ public class OutcomeTests
     }
 
     [Fact]
-    public void IsError_ShouldBeTrue_WhenOutcomeContainsErrorList()
+    public void IsError_ShouldBeTrue_WhenOutcomeCreatedWithFailureParams()
+    {
+        // Arrange
+        var outcome = Outcome.Failure(
+            Error.Validation(),
+            Error.BusinessRule());
+
+        // Act
+        var result = outcome.IsError;
+
+        // Assert
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsError_ShouldBeTrue_WhenOutcomeContainsErrorImplicit()
+    {
+        // Arrange
+        Outcome outcome = Error.Validation();
+
+        // Act
+        var result = outcome.IsError;
+
+        // Assert
+        result.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsError_ShouldBeTrue_WhenOutcomeContainsErrorListImplicit()
     {
         // Arrange
         var errorList = new[] { Error.Validation(), Error.BusinessRule() };
-        Outcome<string> outcome = errorList;
+        Outcome outcome = errorList;
 
         // Act
         var result = outcome.IsError;
 
         // Assert
         result.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void Value_ShouldReturnValue_WhenOutcomeContainsValue()
-    {
-        // Arrange
-        Outcome<string> outcome = "value";
-
-        // Act
-        var value = outcome.Value;
-
-        // Assert
-        value.ShouldBe("value");
-    }
-
-    [Fact]
-    public void Value_ShouldThrowInvalidOperationException_WhenOutcomeContainsError()
-    {
-        // Arrange
-        Outcome<string> outcome = Error.Validation();
-
-        // Act & Assert
-        Should.Throw<InvalidOperationException>(() =>
-        {
-            _ = outcome.Value;
-        });
     }
 
     [Fact]
@@ -73,7 +76,7 @@ public class OutcomeTests
     {
         // Arrange
         var error = Error.Validation();
-        Outcome<string> outcome = error;
+        Outcome outcome = error;
 
         // Act
         var errors = outcome.Errors;
@@ -87,8 +90,8 @@ public class OutcomeTests
     public void Errors_ShouldReturnErrors_WhenOutcomeContainsErrorList()
     {
         // Arrange
-        var errorList = new List<Error>() { Error.Validation(), Error.BusinessRule() };
-        Outcome<string> outcome = errorList;
+        var errorList = new List<Error> { Error.Validation(), Error.BusinessRule() };
+        Outcome outcome = errorList;
 
         // Act
         var errors = outcome.Errors;
@@ -100,10 +103,10 @@ public class OutcomeTests
     }
 
     [Fact]
-    public void Errors_ShouldThrowInvalidOperationException_WhenOutcomeContainsValue()
+    public void Errors_ShouldThrowInvalidOperationException_WhenOutcomeIsSuccess()
     {
         // Arrange
-        Outcome<string> outcome = "value";
+        var outcome = Outcome.Success();
 
         // Act & Assert
         Should.Throw<InvalidOperationException>(() =>
