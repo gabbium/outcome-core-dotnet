@@ -30,6 +30,8 @@ jobs:
     needs: analysis
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/cd-release.yml
+    environment:
+      name: production
     permissions:
       contents: write
       issues: write
