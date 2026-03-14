@@ -19,6 +19,9 @@ jobs:
     name: Code Analysis
     needs: format
     uses: ./.github/workflows/ci-analysis.yml
+    permissions:
+      contents: read
+      pull-requests: write
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -27,5 +30,9 @@ jobs:
     needs: analysis
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/cd-release.yml
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     secrets:
       NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
