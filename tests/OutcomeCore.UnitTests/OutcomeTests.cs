@@ -46,13 +46,13 @@ public class OutcomeTests
     public void Value_ShouldReturnValue_WhenOutcomeContainsValue()
     {
         // Arrange
-        Outcome<string> outcome = "value";
+        Outcome<Unit> outcome = Unit.Value;
 
         // Act
         var value = outcome.Value;
 
         // Assert
-        value.ShouldBe("value");
+        value.ShouldBe(Unit.Value);
     }
 
     [Fact]
