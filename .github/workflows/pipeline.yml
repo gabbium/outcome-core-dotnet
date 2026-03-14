@@ -1,0 +1,31 @@
+name: Pipeline
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    name: Code Formatting
+    uses: ./.github/workflows/ci-format.yml
+
+  analysis:
+    name: Code Analysis
+    needs: format
+    uses: ./.github/workflows/ci-analysis.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  release:
+    name: Publish Release
+    needs: analysis
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/cd-release.yml
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

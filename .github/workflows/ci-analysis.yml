@@ -1,0 +1,54 @@
+name: Analysis
+
+on:
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: true
+
+jobs:
+  sonar-analysis:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: zulu
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install SonarScanner for .NET
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Run SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"gabbium_outcome-core-dotnet" \
+            /n:"outcome-core-dotnet" \
+            /o:"gabbium" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.qualitygate.wait=true \
+            /d:sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+          dotnet build --configuration Release
+          dotnet test --configuration Release --no-build --no-restore /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+          dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"

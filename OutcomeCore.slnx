@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/OutcomeCore/OutcomeCore.csproj" Id="324f090c-61f0-4b8d-b658-ae158b0cb9f8" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OutcomeCore.UnitTests/OutcomeCore.UnitTests.csproj" Id="f3231565-b54d-4652-b235-b9010ec49081" />
+  </Folder>
+</Solution>
